@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Snail Game</title>
+  <style>
+    body {
+      background: #e0ffe0;
+      font-family: sans-serif;
+      text-align: center;
+    }
+    #gameArea {
+      margin: 30px auto;
+      border: 4px solid #444;
+      background: #fff;
+      position: relative;
+      width: 600px;
+      height: 250px;
+      overflow: hidden;
+    }
+    #snail {
+      width: 50px;
+      height: 30px;
+      position: absolute;
+      top: 110px;
+      left: 10px;
+      z-index: 2;
+      background: none;
+    }
+    .obstacle {
+      width: 30px;
+      height: 50px;
+      background: #8b5c2d;
+      position: absolute;
+      bottom: 0;
+      z-index: 1;
+      border-radius: 10px 10px 5px 5px;
+    }
+    #score {
+      font-size: 22px;
+      margin: 15px;
+    }
+    #startBtn {
+      padding: 10px 30px;
+      font-size: 18px;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Snail Game 🐌</h1>
+  <div id="score">Score: 0</div>
+  <div id="gameArea">
+    <svg id="snail" viewBox="0 0 60 30">
+      <ellipse cx="40" cy="20" rx="18" ry="10" fill="#8fbc8f"/>
+      <ellipse cx="25" cy="22" rx="10" ry="7" fill="#d2b48c"/>
+      <circle cx="17" cy="19" r="3" fill="#8fbc8f"/>
+      <circle cx="17" cy="16" r="1" fill="#000"/>
+      <rect x="16" y="12" width="1" height="4" fill="#8fbc8f"/>
+      <rect x="19" y="12" width="1" height="4" fill="#8fbc8f"/>
+    </svg>
+  </div>
+  <button id="startBtn">Start Game</button>
+  <p>Press <b>Spacebar</b> or <b>↑</b> to Jump!</p>
+  <script>
+    const gameArea = document.getElementById('gameArea');
+    const snail = document.getElementById('snail');
+    const scoreDiv = document.getElementById('score');
+    const startBtn = document.getElementById('startBtn');
+    const GAME_WIDTH = 600;
+    const GAME_HEIGHT = 250;
+    let snailY = 110, velocity = 0, gravity = 0.5, jumping = false;
+    let obstacles = [];
+    let score = 0;
+    let interval, gameRunning = false;
+
+    function resetGame() {
+      snailY = 110;
+      velocity = 0;
+      jumping = false;
+      score = 0;
+      scoreDiv.textContent = "Score: 0";
+      obstacles.forEach(obs => obs.remove());
+      obstacles = [];
+      snail.style.top = snailY + 'px';
+      snail.style.left = '10px';
+      gameRunning = false;
+      clearInterval(interval);
+    }
+
+    function startGame() {
+      resetGame();
+      gameRunning = true;
+      interval = setInterval(gameLoop, 20);
+    }
+
+    function jump() {
+      if (!gameRunning) return;
+      if (!jumping) {
+        velocity = -8;
+        jumping = true;
+      }
+    }
+
+    function createObstacle() {
+      const obs = document.createElement('div');
+      obs.classList.add('obstacle');
+      obs.style.left = GAME_WIDTH + 'px';
+      obs.style.height = (40 + Math.random()*40) + 'px';
+      gameArea.appendChild(obs);
+      obstacles.push(obs);
+    }
+
+    function gameLoop() {
+      // Move snail
+      velocity += gravity;
+      snailY += velocity;
+      if (snailY > 110) {
+        snailY = 110;
+        velocity = 0;
+        jumping = false;
+      }
+      if (snailY < 0) snailY = 0;
+      snail.style.top = snailY + 'px';
+
+      // Move obstacles
+      for (let i = obstacles.length-1; i >= 0; i--) {
+        const obs = obstacles[i];
+        let obsLeft = parseInt(obs.style.left) - 5;
+        obs.style.left = obsLeft + 'px';
+
+        // Check collision
+        let snailRect = snail.getBoundingClientRect();
+        let obsRect = obs.getBoundingClientRect();
+        let areaRect = gameArea.getBoundingClientRect();
+        if (
+          obsLeft < 60 && obsLeft + 30 > 10 &&
+          snailY + 30 > GAME_HEIGHT - parseInt(obs.style.height)
+        ) {
+          clearInterval(interval);
+          alert('Game Over! Score: ' + score);
+          gameRunning = false;
+          return;
+        }
+
+        // Remove obstacle if off screen
+        if (obsLeft < -30) {
+          obs.remove();
+          obstacles.splice(i, 1);
+          score++;
+          scoreDiv.textContent = "Score: " + score;
+        }
+      }
+
+      // New obstacle
+      if (Math.random() < 0.025) createObstacle();
+    }
+
+    // Controls
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') jump();
+    });
+    startBtn.onclick = startGame;
+
+    // Initial positioning
+    snail.style.top = snailY + 'px';
+  </script>
+</body>
+</html>
