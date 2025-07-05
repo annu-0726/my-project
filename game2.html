@@ -1,0 +1,87 @@
+import random
+
+ROWS, COLS = 9, 9
+CANDY_TYPES = ['R', 'G', 'B', 'Y', 'P']  # Red, Green, Blue, Yellow, Purple
+
+def generate_board():
+    return [[random.choice(CANDY_TYPES) for _ in range(COLS)] for _ in range(ROWS)]
+
+def print_board(board):
+    for row in board:
+        print(' '.join(row))
+    print()
+
+def find_matches(board):
+    matched = [[False]*COLS for _ in range(ROWS)]
+    # Horizontal matches
+    for i in range(ROWS):
+        for j in range(COLS-2):
+            if board[i][j] == board[i][j+1] == board[i][j+2]:
+                matched[i][j] = matched[i][j+1] = matched[i][j+2] = True
+    # Vertical matches
+    for j in range(COLS):
+        for i in range(ROWS-2):
+            if board[i][j] == board[i+1][j] == board[i+2][j]:
+                matched[i][j] = matched[i+1][j] = matched[i+2][j] = True
+    return matched
+
+def crush(board, matched):
+    crushed = False
+    for i in range(ROWS):
+        for j in range(COLS):
+            if matched[i][j]:
+                board[i][j] = ' '
+                crushed = True
+    return crushed
+
+def drop(board):
+    for j in range(COLS):
+        pointer = ROWS-1
+        for i in reversed(range(ROWS)):
+            if board[i][j] != ' ':
+                board[pointer][j] = board[i][j]
+                if pointer != i:
+                    board[i][j] = ' '
+                pointer -= 1
+        # Fill empty spots with new candies
+        for i in range(pointer+1):
+            board[i][j] = random.choice(CANDY_TYPES)
+
+def play_round(board):
+    while True:
+        matched = find_matches(board)
+        if any(any(row) for row in matched):
+            crush(board, matched)
+            drop(board)
+        else:
+            break
+
+def swap(board, x1, y1, x2, y2):
+    board[x1][y1], board[x2][y2] = board[x2][y2], board[x1][y1]
+
+def valid_swap(x1, y1, x2, y2):
+    return (abs(x1-x2)+abs(y1-y2)) == 1
+
+def main():
+    board = generate_board()
+    play_round(board)  # Remove any starting matches
+    print("Welcome to Console Candy Crush!")
+    print_board(board)
+    while True:
+        print("Enter swap coordinates (row1 col1 row2 col2) or 'q' to quit:")
+        command = input().strip()
+        if command.lower() == 'q':
+            break
+        try:
+            x1, y1, x2, y2 = map(int, command.split())
+            if valid_swap(x1, y1, x2, y2):
+                swap(board, x1, y1, x2, y2)
+                play_round(board)
+                print_board(board)
+            else:
+                print("Invalid swap. Try again.")
+        except Exception:
+            print("Invalid input. Try again.")
+
+if __name__ == "__main__":
+    main()
